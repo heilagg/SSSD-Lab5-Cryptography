@@ -29,10 +29,10 @@ def unb64(text: str) -> bytes:
 
 
 def hash_password(password: str) -> str:
-    salt = os.urandom(16)  # a fresh random salt per password
+    salt = os.urandom(16)  
     kdf = Scrypt(salt=salt, length=32, n=SCRYPT_N, r=SCRYPT_R, p=SCRYPT_P)
     digest = kdf.derive(password.encode())
-    # store salt and digest together so we can verify later
+
     return f"scrypt${b64(salt)}${b64(digest)}"
 
 
@@ -44,7 +44,7 @@ def verify_password(password: str, stored: str) -> bool:
         return False
     kdf = Scrypt(salt=salt, length=32, n=SCRYPT_N, r=SCRYPT_R, p=SCRYPT_P)
     try:
-        kdf.verify(password.encode(), digest)  # constant time comparison inside
+        kdf.verify(password.encode(), digest)  
         return True
     except InvalidKey:
         return False
