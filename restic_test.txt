@@ -1,0 +1,72 @@
+RESTIC TEST - open-source encrypted backup (Lab 5, part 2)
+restic version:
+restic 0.17.3 compiled with go1.23.3 on linux/amd64
+
+=== 1. Initialize an encrypted repository (AES-256 + Poly1305 MAC) ===
+created restic repository 4677b29b7a at /tmp/rd2/repo
+
+Please note that knowledge of your password is required to access
+the repository. Losing your password means that your data is
+irrecoverably lost.
+
+=== 2. Back up the data folder ===
+no parent snapshot found, will read all files
+
+Files:           2 new,     0 changed,     0 unmodified
+Dirs:            1 new,     0 changed,     0 unmodified
+Added to the repository: 3.130 KiB (2.867 KiB stored)
+
+processed 2 files, 2.056 KiB in 0:00
+snapshot 5a07d23f saved
+
+=== 3. List snapshots ===
+ID        Time                 Host        Tags        Paths          Size
+-------------------------------------------------------------------------------
+5a07d23f  2026-10-23 20:44:18  vm                      /tmp/rd2/data  2.056 KiB
+-------------------------------------------------------------------------------
+1 snapshots
+
+=== 4. Data on disk is encrypted (raw pack file is ciphertext) ===
+pack file: repo/data/dc/dcf68e711fdcbfa6248174f84b6800e188ae389e654c008c64248bef3f1dea71
+000000 fd 0e 15 ef 83 31 be 0c e4 65 8d 60 a9 39 6e e1  >.....1...e.`.9n.<
+000010 f5 ef 71 85 0d 81 e0 57 dd 1f 89 c4 9b 45 9d d9  >..q....W.....E..<
+000020 ce 17 89 fc 01 28 8b c0 05 3a 52 83 22 55 95 82  >.....(...:R."U..<
+
+=== 5. Integrity check: restic verifies every chunk by its SHA-256 name ===
+using temporary cache in /tmp/restic-check-cache-3536000841
+create exclusive lock for repository
+load indexes
+check all packs
+check snapshots, trees and blobs
+[0:00] 100.00%  1 / 1 snapshots
+read all data
+[0:00] 100.00%  2 / 2 packs
+no errors were found
+
+=== 6. Restore the snapshot and confirm it is identical ===
+restoring snapshot 5a07d23f of [/tmp/rd2/data] at 2026-10-23 20:44:18.575874455 +0500 +05 by root@vm to restored
+Summary: Restored 3 files/dirs (2.056 KiB) in 0:00
+RESULT: restored data is IDENTICAL to the original
+
+=== 7. Tamper detection: flip one bit inside the repository, then re-check ===
+flipped one bit at offset 20 in the pack file
+using temporary cache in /tmp/restic-check-cache-1369828316
+create exclusive lock for repository
+load indexes
+check all packs
+check snapshots, trees and blobs
+error for tree 4d5c1e43:
+  decrypting blob <tree/4d5c1e43> from dcf68e71 failed: ciphertext verification failed
+[0:00] 100.00%  1 / 1 snapshots
+read all data
+pack dcf68e711fdcbfa6248174f84b6800e188ae389e654c008c64248bef3f1dea71 contains 2 errors: [blob 4d5c1e43dfcce4e78161e503fd83ae342ced52d5d8a6c090abfb71af629db334: decrypting blob <tree/4d5c1e43> from dcf68e71 failed: ciphertext verification failed unexpected pack id d8d71569471e8ab8ad67e781de9ba63e902fa366f84610fe3f700ba59aadce95]
+[0:00] 100.00%  2 / 2 packs
+
+The repository contains damaged pack files. These damaged files must be removed to repair the repository. This can be done using the following commands. Please read the troubleshooting guide at https://restic.readthedocs.io/en/stable/077_troubleshooting.html first.
+
+restic repair packs dcf68e711fdcbfa6248174f84b6800e188ae389e654c008c64248bef3f1dea71
+restic repair snapshots --forget
+
+Damaged pack files can be caused by backend problems, hardware problems or bugs in restic. Please open an issue at https://github.com/restic/restic/issues/new/choose for further troubleshooting!
+Fatal: repository contains errors
+(restic exit code above is non-zero: the tampering was detected)

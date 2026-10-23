@@ -1,0 +1,32 @@
+
+======================================================================
+CASE 1  User login: password storage with scrypt
+======================================================================
+Stored in the database (no plain password):
+  scrypt$FDnD73qcHWatXbsotmoAKw==$koCIlk2xodE6+xwu97BowksSaUk45zNM0595ilPETe8=
+Login with the right password : True
+Login with a wrong password   : False
+Note: the same password hashed again gives a DIFFERENT value,
+because each hash uses a new random salt:
+  scrypt$ID/EYQ90sj0Sb8o+oeWvdw==$WwfD9ohi7nqM6+z889JU2A25nvlSVWUvka4T8Sdq2jM=
+
+======================================================================
+CASE 2  Encrypted vault: AES-256-GCM (encryption at rest)
+======================================================================
+Secret stored on disk (encrypted, unreadable):
+  {"salt": "JkliyosN2C7wMxS7oyYFeQ==", "nonce": "K39QsKXDqboTUdwL", "ciphertext": "5vTxKIOwwPJEKnZQ934spCwOp/MNf9K16iyQRPzIGQpKXw7fcjLhycERUneOmgCR0Q=="}
+Decrypt with the right passphrase : my bank card: 4111 1111 1111 1111
+Decrypt with a wrong passphrase   : REJECTED (InvalidTag)
+Decrypt after tampering           : REJECTED (InvalidTag)
+-> AES-GCM detects any change. It never returns altered data as valid.
+
+======================================================================
+CASE 3  Signing a release: Ed25519 digital signature
+======================================================================
+Message  : release v1.0.0 sha256=ab12cd34
+Signature: mGJiJC5AJHSjJNGwnnzaxtC6n7oiyoBih18fhjgKI1H/pmugjAwS8IBRE7WRFEYIpEzaW0lY3fs9f/FirOA/DQ==
+Verify original message  : True
+Verify a changed message : False
+-> Only the holder of the private key can sign; anyone can verify with
+   the public key, and any change breaks the signature.
+
