@@ -1,20 +1,3 @@
-#!/usr/bin/env python3
-"""
-cryptodemo - a small command line app that demonstrates proper cryptography usage.
-
-Lab 5 (Software Security and Secure Development). It shows three real world
-cases, each with the right tool for the job (see Lecture 5):
-
-  1. User login          -> password storage with a memory hard KDF (scrypt)
-  2. Encrypted vault      -> data encryption at rest with AES-256-GCM (AEAD)
-  3. Signing a release    -> digital signatures with Ed25519 (EdDSA)
-
-It also shows WHY each tool is needed, by trying to tamper with the data and
-showing that the tampering is detected.
-
-Only the `cryptography` library is used (no custom crypto is written by hand).
-"""
-
 import argparse
 import base64
 import json
