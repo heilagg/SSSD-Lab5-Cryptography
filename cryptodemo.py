@@ -13,8 +13,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
 from cryptography.exceptions import InvalidKey, InvalidSignature
 
 
-# scrypt cost parameters. n is the main work factor (memory and CPU).
-# Higher n = slower = harder to brute force. These are sensible demo values.
+
 SCRYPT_N = 2 ** 14
 SCRYPT_R = 8
 SCRYPT_P = 1
@@ -28,11 +27,6 @@ def unb64(text: str) -> bytes:
     return base64.b64decode(text.encode())
 
 
-# ---------------------------------------------------------------------------
-# Case 1: password storage with scrypt (a memory hard KDF)
-# Real world: how any website should store user passwords. The password itself
-# is never stored. We store a random salt plus the slow hash of the password.
-# ---------------------------------------------------------------------------
 
 def hash_password(password: str) -> str:
     salt = os.urandom(16)  # a fresh random salt per password
@@ -56,13 +50,6 @@ def verify_password(password: str, stored: str) -> bool:
         return False
 
 
-# ---------------------------------------------------------------------------
-# Case 2: encrypted vault with AES-256-GCM (AEAD)
-# Real world: a password manager, or encrypting an API key / secret note before
-# saving it to disk. AES-GCM gives confidentiality AND integrity at once: if the
-# ciphertext is changed by one bit, decryption fails instead of returning junk.
-# The AES key is derived from a master passphrase with scrypt.
-# ---------------------------------------------------------------------------
 
 def derive_key(passphrase: str, salt: bytes) -> bytes:
     kdf = Scrypt(salt=salt, length=32, n=SCRYPT_N, r=SCRYPT_R, p=SCRYPT_P)
@@ -72,7 +59,7 @@ def derive_key(passphrase: str, salt: bytes) -> bytes:
 def encrypt(passphrase: str, plaintext: str) -> str:
     salt = os.urandom(16)
     key = derive_key(passphrase, salt)
-    nonce = os.urandom(12)  # a one time number, never reused with the same key
+    nonce = os.urandom(12)  
     aesgcm = AESGCM(key)
     ciphertext = aesgcm.encrypt(nonce, plaintext.encode(), None)
     blob = {"salt": b64(salt), "nonce": b64(nonce), "ciphertext": b64(ciphertext)}
@@ -86,18 +73,11 @@ def decrypt(passphrase: str, blob_json: str) -> str:
     ciphertext = unb64(blob["ciphertext"])
     key = derive_key(passphrase, salt)
     aesgcm = AESGCM(key)
-    # raises InvalidTag if the key is wrong OR the ciphertext was tampered with
+
     plaintext = aesgcm.decrypt(nonce, ciphertext, None)
     return plaintext.decode()
 
 
-# ---------------------------------------------------------------------------
-# Case 3: digital signatures with Ed25519 (EdDSA)
-# Real world: signing a software release or a transaction so anyone can verify
-# it really came from you and was not changed. Ed25519 is used instead of ECDSA
-# because it uses deterministic nonces, which avoids the nonce reuse attack from
-# Lecture 5 (slide 8, "the big lie of ECDSA").
-# ---------------------------------------------------------------------------
 
 def generate_keypair() -> tuple[str, str]:
     private_key = Ed25519PrivateKey.generate()
@@ -122,9 +102,7 @@ def verify_signature(public_b64: str, message: str, signature_b64: str) -> bool:
         return False
 
 
-# ---------------------------------------------------------------------------
-# The guided demo: runs all three cases and shows tamper detection
-# ---------------------------------------------------------------------------
+
 
 def line(title: str) -> None:
     print("\n" + "=" * 70)
@@ -153,10 +131,10 @@ def run_demo() -> None:
         decrypt("wrong-passphrase", blob)
     except Exception as exc:
         print("Decrypt with a wrong passphrase   : REJECTED (" + type(exc).__name__ + ")")
-    # tamper with one byte of the ciphertext and try again
+
     tampered = json.loads(blob)
     raw = bytearray(unb64(tampered["ciphertext"]))
-    raw[0] ^= 0x01  # flip one bit
+    raw[0] ^= 0x01  
     tampered["ciphertext"] = b64(bytes(raw))
     try:
         decrypt("master-passphrase", json.dumps(tampered))
@@ -178,9 +156,7 @@ def run_demo() -> None:
     print()
 
 
-# ---------------------------------------------------------------------------
-# Command line interface
-# ---------------------------------------------------------------------------
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Proper cryptography usage demo (Lab 5).")
